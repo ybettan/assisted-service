@@ -6,6 +6,7 @@ set -o errexit
 set -o xtrace
 
 CLUSTER_CONTEXT=$(${KUBECTL} config current-context | cut -d'-' -f1)
+CLUSTER_NAME=$(${KUBECTL} config current-context | cut -d'-' -f2-)
 
 
 # This file is responsible to the update the local k8s (for example minikube) with the new image.
@@ -44,6 +45,7 @@ case "${CLUSTER_CONTEXT}" in
   "k3d")
     make update-${DEBUG:+debug-}minimal
     k3d image import ${SERVICE}
+    #k3d image import ${SERVICE} --cluster ${CLUSTER_NAME}
     ;;
 
   *)
