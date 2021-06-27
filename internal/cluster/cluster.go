@@ -75,9 +75,15 @@ type InstallationAPI interface {
 	GetMasterNodesIds(ctx context.Context, c *common.Cluster, db *gorm.DB) ([]*strfmt.UUID, error)
 }
 
+type ProgressAPI interface {
+	UpdateInstallProgress(ctx context.Context, clusterID strfmt.UUID) error
+	UpdateFinalizingProgress(ctx context.Context, db *gorm.DB, clusterID strfmt.UUID) error
+}
+
 type API interface {
 	RegistrationAPI
 	InstallationAPI
+	ProgressAPI
 	// Refresh state in case of hosts update
 	RefreshStatus(ctx context.Context, c *common.Cluster, db *gorm.DB) (*common.Cluster, error)
 	ClusterMonitoring()
@@ -666,6 +672,71 @@ func (m *Manager) CancelInstallation(ctx context.Context, c *common.Cluster, rea
 func (m *Manager) UpdateLogsProgress(ctx context.Context, c *common.Cluster, progress string) error {
 	err := updateLogsProgress(logutil.FromContext(ctx, m.log), m.db, c, swag.StringValue(c.Status), progress)
 	return err
+}
+
+func (m *Manager) UpdateInstallProgress(ctx context.Context, clusterID strfmt.UUID) error {
+	log := logutil.FromContext(ctx, m.log)
+
+	//FIXME: load hosts table only (no need to load operators table as well)
+	cluster, err := common.GetClusterFromDB(m.db, clusterID, common.UseEagerLoading)
+	if err != nil {
+		log.WithError(err).Error("Failed to get cluster from DB")
+		return err
+	}
+
+	var totalHostsDoneStages, totalHostsStages float64
+	for _, h := range cluster.Hosts {
+		stages := m.hostAPI.GetStagesByRole(h.Role, h.Bootstrap)
+		currentIndex := m.hostAPI.IndexOfStage(h.Progress.CurrentStage, stages)
+		totalHostsDoneStages += float64(currentIndex)
+		totalHostsStages += float64(len(stages))
+	}
+
+	installingStagePercentage := int64((totalHostsDoneStages / totalHostsStages) * 100)
+	totalPercentage := int64(common.ProgressWeightPreparingForInstallationStage*float64(cluster.Progress.PreparingForInstallationStagePercentage) +
+		common.ProgressWeightInstallingStage*float64(installingStagePercentage))
+	progress := models.ClusterProgressInfo{
+		InstallingStagePercentage: installingStagePercentage,
+		TotalPercentage:           &totalPercentage,
+	}
+
+	return m.db.Model(&cluster).UpdateColumn("progress", progress).Error
+}
+
+func (m *Manager) UpdateFinalizingProgress(ctx context.Context, db *gorm.DB, clusterID strfmt.UUID) error {
+	log := logutil.FromContext(ctx, m.log)
+
+	//FIXME: load operators table only (no need to load hosts table as well)
+	cluster, err := common.GetClusterFromDB(db, clusterID, common.UseEagerLoading)
+	if err != nil {
+		log.WithError(err).Error("Failed to get cluster from DB")
+		return err
+	}
+
+	var doneOperatorsCount float64
+	for _, o := range cluster.MonitoredOperators {
+
+		// built in operators must succeed
+		if o.OperatorType == models.OperatorTypeBuiltin && o.Status == models.OperatorStatusAvailable {
+			doneOperatorsCount++
+		}
+
+		// failing OLM operators will lead to dgraded cluster but are still considered as a progress
+		if o.OperatorType == models.OperatorTypeOlm && o.Status != models.OperatorStatusProgressing {
+			doneOperatorsCount++
+		}
+	}
+
+	finalizingStagePercentage := int64((doneOperatorsCount / float64(len(cluster.MonitoredOperators))) * 100)
+	totalPercentage := int64(common.ProgressWeightPreparingForInstallationStage*float64(cluster.Progress.PreparingForInstallationStagePercentage) +
+		common.ProgressWeightInstallingStage*float64(cluster.Progress.InstallingStagePercentage) +
+		common.ProgressWeightFinalizingStage*float64(finalizingStagePercentage))
+	progress := models.ClusterProgressInfo{
+		FinalizingStagePercentage: finalizingStagePercentage,
+		TotalPercentage:           &totalPercentage,
+	}
+
+	return db.Model(&cluster).UpdateColumn("progress", progress).Error
 }
 
 func (m *Manager) UpdateAmsSubscriptionID(ctx context.Context, clusterID, amsSubscriptionID strfmt.UUID) *common.ApiErrorResponse {

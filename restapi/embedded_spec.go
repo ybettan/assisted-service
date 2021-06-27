@@ -5073,6 +5073,11 @@ func init() {
         "org_id": {
           "type": "string"
         },
+        "progress": {
+          "description": "Installation progress percentages of the cluster.",
+          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:progress_\"",
+          "$ref": "#/definitions/cluster-progress-info"
+        },
         "pull_secret_set": {
           "description": "True if the pull secret has been added to the cluster.",
           "type": "boolean"
@@ -5339,6 +5344,26 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/cluster"
+      }
+    },
+    "cluster-progress-info": {
+      "type": "object",
+      "required": [
+        "total_percentage"
+      ],
+      "properties": {
+        "finalizing_stage_percentage": {
+          "type": "integer"
+        },
+        "installing_stage_percentage": {
+          "type": "integer"
+        },
+        "preparing_for_installation_stage_percentage": {
+          "type": "integer"
+        },
+        "total_percentage": {
+          "type": "integer"
+        }
       }
     },
     "cluster-update-params": {
@@ -6486,12 +6511,16 @@ func init() {
     "host-progress-info": {
       "type": "object",
       "required": [
+        "installation_percentage",
         "current_stage"
       ],
       "properties": {
         "current_stage": {
           "type": "string",
           "$ref": "#/definitions/host-stage"
+        },
+        "installation_percentage": {
+          "type": "integer"
         },
         "progress_info": {
           "type": "string",
@@ -12812,6 +12841,11 @@ func init() {
         "org_id": {
           "type": "string"
         },
+        "progress": {
+          "description": "Installation progress percentages of the cluster.",
+          "x-go-custom-tag": "gorm:\"embedded;embedded_prefix:progress_\"",
+          "$ref": "#/definitions/cluster-progress-info"
+        },
         "pull_secret_set": {
           "description": "True if the pull secret has been added to the cluster.",
           "type": "boolean"
@@ -13078,6 +13112,26 @@ func init() {
       "type": "array",
       "items": {
         "$ref": "#/definitions/cluster"
+      }
+    },
+    "cluster-progress-info": {
+      "type": "object",
+      "required": [
+        "total_percentage"
+      ],
+      "properties": {
+        "finalizing_stage_percentage": {
+          "type": "integer"
+        },
+        "installing_stage_percentage": {
+          "type": "integer"
+        },
+        "preparing_for_installation_stage_percentage": {
+          "type": "integer"
+        },
+        "total_percentage": {
+          "type": "integer"
+        }
       }
     },
     "cluster-update-params": {
@@ -14149,12 +14203,16 @@ func init() {
     "host-progress-info": {
       "type": "object",
       "required": [
+        "installation_percentage",
         "current_stage"
       ],
       "properties": {
         "current_stage": {
           "type": "string",
           "$ref": "#/definitions/host-stage"
+        },
+        "installation_percentage": {
+          "type": "integer"
         },
         "progress_info": {
           "type": "string",

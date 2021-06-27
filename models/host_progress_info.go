@@ -21,6 +21,10 @@ type HostProgressInfo struct {
 	// Required: true
 	CurrentStage HostStage `json:"current_stage"`
 
+	// installation percentage
+	// Required: true
+	InstallationPercentage *int64 `json:"installation_percentage"`
+
 	// progress info
 	ProgressInfo string `json:"progress_info,omitempty" gorm:"type:varchar(2048)"`
 
@@ -38,6 +42,10 @@ func (m *HostProgressInfo) Validate(formats strfmt.Registry) error {
 	var res []error
 
 	if err := m.validateCurrentStage(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateInstallationPercentage(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -61,6 +69,15 @@ func (m *HostProgressInfo) validateCurrentStage(formats strfmt.Registry) error {
 		if ve, ok := err.(*errors.Validation); ok {
 			return ve.ValidateName("current_stage")
 		}
+		return err
+	}
+
+	return nil
+}
+
+func (m *HostProgressInfo) validateInstallationPercentage(formats strfmt.Registry) error {
+
+	if err := validate.Required("installation_percentage", "body", m.InstallationPercentage); err != nil {
 		return err
 	}
 
