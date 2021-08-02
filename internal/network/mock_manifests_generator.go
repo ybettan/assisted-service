@@ -90,3 +90,17 @@ func (mr *MockManifestsGeneratorAPIMockRecorder) AddSchedulableMastersManifest(c
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddSchedulableMastersManifest", reflect.TypeOf((*MockManifestsGeneratorAPI)(nil).AddSchedulableMastersManifest), ctx, log, c)
 }
+
+// AddDiskEncryptionManifest mocks base method
+func (m *MockManifestsGeneratorAPI) AddDiskEncryptionManifest(ctx context.Context, log logrus.FieldLogger, c *common.Cluster) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "AddDiskEncryptionManifest", ctx, log, c)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// AddDiskEncryptionManifest indicates an expected call of AddDiskEncryptionManifest
+func (mr *MockManifestsGeneratorAPIMockRecorder) AddDiskEncryptionManifest(ctx, log, c interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddDiskEncryptionManifest", reflect.TypeOf((*MockManifestsGeneratorAPI)(nil).AddDiskEncryptionManifest), ctx, log, c)
+}

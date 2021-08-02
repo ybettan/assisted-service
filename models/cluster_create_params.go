@@ -38,6 +38,9 @@ type ClusterCreateParams struct {
 	// Cluster networks that are associated with this cluster.
 	ClusterNetworks []*ClusterNetwork `json:"cluster_networks"`
 
+	// Installation disks encryption mode and host roles to be applied.
+	DiskEncryption *DiskEncryption `json:"disk_encryption,omitempty"`
+
 	// Guaranteed availability of the installed cluster. 'Full' installs a Highly-Available cluster
 	// over multiple master nodes whereas 'None' installs a full cluster over one node.
 	//
@@ -128,6 +131,10 @@ func (m *ClusterCreateParams) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateClusterNetworks(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateDiskEncryption(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -235,6 +242,24 @@ func (m *ClusterCreateParams) validateClusterNetworks(formats strfmt.Registry) e
 			}
 		}
 
+	}
+
+	return nil
+}
+
+func (m *ClusterCreateParams) validateDiskEncryption(formats strfmt.Registry) error {
+
+	if swag.IsZero(m.DiskEncryption) { // not required
+		return nil
+	}
+
+	if m.DiskEncryption != nil {
+		if err := m.DiskEncryption.Validate(formats); err != nil {
+			if ve, ok := err.(*errors.Validation); ok {
+				return ve.ValidateName("disk_encryption")
+			}
+			return err
+		}
 	}
 
 	return nil

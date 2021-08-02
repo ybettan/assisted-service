@@ -15,6 +15,7 @@ import (
 	"github.com/containers/image/v5/docker/reference"
 	"github.com/openshift/assisted-service/internal/common"
 	"github.com/openshift/assisted-service/internal/network"
+	"github.com/openshift/assisted-service/models"
 	"github.com/openshift/assisted-service/pkg/auth"
 	"github.com/openshift/assisted-service/pkg/ocm"
 	"github.com/pkg/errors"
@@ -390,6 +391,33 @@ func ValidateIPAddressFamily(ipV6Supported bool, elements ...*string) error {
 		}
 		if strings.Contains(*e, ":") {
 			return errors.Errorf("IPv6 is not supported in this setup")
+		}
+	}
+	return nil
+}
+
+func ValidateDiskEncryptionParams(diskEncryptionParams *models.DiskEncryption) error {
+	if diskEncryptionParams == nil {
+		return nil
+	}
+	if diskEncryptionParams.Mode == models.DiskEncryptionModeTang {
+		if diskEncryptionParams.TangServers == "" {
+			return errors.New("Setting Tang mode but tang_servers isn't set")
+		}
+		var tangServers []struct {
+			URL        string
+			Thumbprint string
+		}
+		if err := json.Unmarshal([]byte(diskEncryptionParams.TangServers), &tangServers); err != nil {
+			return errors.Wrap(err, "Unable to marshal tang_servers")
+		}
+		for _, ts := range tangServers {
+			if _, err := url.ParseRequestURI(ts.URL); err != nil {
+				return errors.Wrap(err, "Tang URL isn't valid")
+			}
+			if ts.Thumbprint == "" {
+				return errors.New("Tang thumbprint isn't set")
+			}
 		}
 	}
 	return nil
