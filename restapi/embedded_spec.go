@@ -8248,6 +8248,7 @@ func init() {
         "enable_on": {
           "description": "Enable/disable disk encryption on master nodes, worker nodes, or all nodes.",
           "type": "string",
+          "default": "none",
           "enum": [
             "none",
             "all",
@@ -8258,6 +8259,7 @@ func init() {
         "mode": {
           "description": "The disk encryption mode to use.",
           "type": "string",
+          "default": "tpmv2",
           "enum": [
             "tpmv2",
             "tang"
@@ -18713,6 +18715,7 @@ func init() {
         "enable_on": {
           "description": "Enable/disable disk encryption on master nodes, worker nodes, or all nodes.",
           "type": "string",
+          "default": "none",
           "enum": [
             "none",
             "all",
@@ -18723,6 +18726,7 @@ func init() {
         "mode": {
           "description": "The disk encryption mode to use.",
           "type": "string",
+          "default": "tpmv2",
           "enum": [
             "tpmv2",
             "tang"
