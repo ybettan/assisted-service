@@ -17,6 +17,7 @@ require (
 	github.com/danielerez/go-dns-client v0.0.0-20200630114514-0b60d1703f0b
 	github.com/diskfs/go-diskfs v1.1.2-0.20210216073915-ba492710e2d8
 	github.com/dustin/go-humanize v1.0.0
+	github.com/emicklei/go-restful v2.12.0+incompatible // indirect
 	github.com/filanov/stateswitch v0.0.0-20200714113403-51a42a34c604
 	github.com/frankban/quicktest v1.11.3 // indirect
 	github.com/go-gormigrate/gormigrate/v2 v2.0.0
@@ -59,7 +60,7 @@ require (
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rs/cors v1.7.0
 	github.com/sirupsen/logrus v1.7.0
-	github.com/slok/go-http-metrics v0.8.0
+	github.com/slok/go-http-metrics v0.10.0
 	github.com/stretchr/testify v1.7.0
 	github.com/thedevsaddam/retry v0.0.0-20200324223450-9769a859cc6d
 	github.com/thoas/go-funk v0.8.0
@@ -68,7 +69,7 @@ require (
 	go.elastic.co/apm/module/apmlogrus v1.11.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c
+	golang.org/x/sys v0.0.0-20210910150752-751e447fb3d0
 	golang.org/x/tools v0.1.5 // indirect
 	gopkg.in/ini.v1 v1.51.0
 	gopkg.in/square/go-jose.v2 v2.3.1
