@@ -21,7 +21,6 @@ package v1 // github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1
 
 import (
 	"io"
-	"net/http"
 	"sort"
 
 	jsoniter "github.com/json-iterator/go"
@@ -32,7 +31,10 @@ import (
 func MarshalIngress(object *Ingress, writer io.Writer) error {
 	stream := helpers.NewStream(writer)
 	writeIngress(object, stream)
-	stream.Flush()
+	err := stream.Flush()
+	if err != nil {
+		return err
+	}
 	return stream.Error
 }
 
@@ -73,16 +75,7 @@ func writeIngress(object *Ingress, stream *jsoniter.Stream) {
 		stream.WriteString(object.dnsName)
 		count++
 	}
-	present_ = object.bitmap_&16 != 0 && object.cluster != nil
-	if present_ {
-		if count > 0 {
-			stream.WriteMore()
-		}
-		stream.WriteObjectField("cluster")
-		writeCluster(object.cluster, stream)
-		count++
-	}
-	present_ = object.bitmap_&32 != 0
+	present_ = object.bitmap_&16 != 0
 	if present_ {
 		if count > 0 {
 			stream.WriteMore()
@@ -91,7 +84,7 @@ func writeIngress(object *Ingress, stream *jsoniter.Stream) {
 		stream.WriteBool(object.default_)
 		count++
 	}
-	present_ = object.bitmap_&64 != 0
+	present_ = object.bitmap_&32 != 0
 	if present_ {
 		if count > 0 {
 			stream.WriteMore()
@@ -100,7 +93,7 @@ func writeIngress(object *Ingress, stream *jsoniter.Stream) {
 		stream.WriteString(string(object.listening))
 		count++
 	}
-	present_ = object.bitmap_&128 != 0 && object.routeSelectors != nil
+	present_ = object.bitmap_&64 != 0 && object.routeSelectors != nil
 	if present_ {
 		if count > 0 {
 			stream.WriteMore()
@@ -127,7 +120,6 @@ func writeIngress(object *Ingress, stream *jsoniter.Stream) {
 		} else {
 			stream.WriteNil()
 		}
-		count++
 	}
 	stream.WriteObjectEnd()
 }
@@ -135,9 +127,6 @@ func writeIngress(object *Ingress, stream *jsoniter.Stream) {
 // UnmarshalIngress reads a value of the 'ingress' type from the given
 // source, which can be an slice of bytes, a string or a reader.
 func UnmarshalIngress(source interface{}) (object *Ingress, err error) {
-	if source == http.NoBody {
-		return
-	}
 	iterator, err := helpers.NewIterator(source)
 	if err != nil {
 		return
@@ -171,19 +160,15 @@ func readIngress(iterator *jsoniter.Iterator) *Ingress {
 			value := iterator.ReadString()
 			object.dnsName = value
 			object.bitmap_ |= 8
-		case "cluster":
-			value := readCluster(iterator)
-			object.cluster = value
-			object.bitmap_ |= 16
 		case "default":
 			value := iterator.ReadBool()
 			object.default_ = value
-			object.bitmap_ |= 32
+			object.bitmap_ |= 16
 		case "listening":
 			text := iterator.ReadString()
 			value := ListeningMethod(text)
 			object.listening = value
-			object.bitmap_ |= 64
+			object.bitmap_ |= 32
 		case "route_selectors":
 			value := map[string]string{}
 			for {
@@ -195,7 +180,7 @@ func readIngress(iterator *jsoniter.Iterator) *Ingress {
 				value[key] = item
 			}
 			object.routeSelectors = value
-			object.bitmap_ |= 128
+			object.bitmap_ |= 64
 		default:
 			iterator.ReadAny()
 		}
