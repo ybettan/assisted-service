@@ -27,7 +27,6 @@ type IngressBuilder struct {
 	id             string
 	href           string
 	dnsName        string
-	cluster        *ClusterBuilder
 	listening      ListeningMethod
 	routeSelectors map[string]string
 	default_       bool
@@ -58,70 +57,22 @@ func (b *IngressBuilder) HREF(value string) *IngressBuilder {
 	return b
 }
 
+// Empty returns true if the builder is empty, i.e. no attribute has a value.
+func (b *IngressBuilder) Empty() bool {
+	return b == nil || b.bitmap_&^1 == 0
+}
+
 // DNSName sets the value of the 'DNS_name' attribute to the given value.
-//
-//
 func (b *IngressBuilder) DNSName(value string) *IngressBuilder {
 	b.dnsName = value
 	b.bitmap_ |= 8
 	return b
 }
 
-// Cluster sets the value of the 'cluster' attribute to the given value.
-//
-// Definition of an _OpenShift_ cluster.
-//
-// The `cloud_provider` attribute is a reference to the cloud provider. When a
-// cluster is retrieved it will be a link to the cloud provider, containing only
-// the kind, id and href attributes:
-//
-// [source,json]
-// ----
-// {
-//   "cloud_provider": {
-//     "kind": "CloudProviderLink",
-//     "id": "123",
-//     "href": "/api/clusters_mgmt/v1/cloud_providers/123"
-//   }
-// }
-// ----
-//
-// When a cluster is created this is optional, and if used it should contain the
-// identifier of the cloud provider to use:
-//
-// [source,json]
-// ----
-// {
-//   "cloud_provider": {
-//     "id": "123",
-//   }
-// }
-// ----
-//
-// If not included, then the cluster will be created using the default cloud
-// provider, which is currently Amazon Web Services.
-//
-// The region attribute is mandatory when a cluster is created.
-//
-// The `aws.access_key_id`, `aws.secret_access_key` and `dns.base_domain`
-// attributes are mandatory when creation a cluster with your own Amazon Web
-// Services account.
-func (b *IngressBuilder) Cluster(value *ClusterBuilder) *IngressBuilder {
-	b.cluster = value
-	if value != nil {
-		b.bitmap_ |= 16
-	} else {
-		b.bitmap_ &^= 16
-	}
-	return b
-}
-
 // Default sets the value of the 'default' attribute to the given value.
-//
-//
 func (b *IngressBuilder) Default(value bool) *IngressBuilder {
 	b.default_ = value
-	b.bitmap_ |= 32
+	b.bitmap_ |= 16
 	return b
 }
 
@@ -130,19 +81,17 @@ func (b *IngressBuilder) Default(value bool) *IngressBuilder {
 // Cluster components listening method.
 func (b *IngressBuilder) Listening(value ListeningMethod) *IngressBuilder {
 	b.listening = value
-	b.bitmap_ |= 64
+	b.bitmap_ |= 32
 	return b
 }
 
 // RouteSelectors sets the value of the 'route_selectors' attribute to the given value.
-//
-//
 func (b *IngressBuilder) RouteSelectors(value map[string]string) *IngressBuilder {
 	b.routeSelectors = value
 	if value != nil {
-		b.bitmap_ |= 128
+		b.bitmap_ |= 64
 	} else {
-		b.bitmap_ &^= 128
+		b.bitmap_ &^= 64
 	}
 	return b
 }
@@ -156,11 +105,6 @@ func (b *IngressBuilder) Copy(object *Ingress) *IngressBuilder {
 	b.id = object.id
 	b.href = object.href
 	b.dnsName = object.dnsName
-	if object.cluster != nil {
-		b.cluster = NewCluster().Copy(object.cluster)
-	} else {
-		b.cluster = nil
-	}
 	b.default_ = object.default_
 	b.listening = object.listening
 	if len(object.routeSelectors) > 0 {
@@ -181,12 +125,6 @@ func (b *IngressBuilder) Build() (object *Ingress, err error) {
 	object.href = b.href
 	object.bitmap_ = b.bitmap_
 	object.dnsName = b.dnsName
-	if b.cluster != nil {
-		object.cluster, err = b.cluster.Build()
-		if err != nil {
-			return
-		}
-	}
 	object.default_ = b.default_
 	object.listening = b.listening
 	if b.routeSelectors != nil {

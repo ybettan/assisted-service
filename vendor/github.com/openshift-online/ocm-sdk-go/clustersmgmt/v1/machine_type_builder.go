@@ -32,6 +32,7 @@ type MachineTypeBuilder struct {
 	genericName   string
 	memory        *ValueBuilder
 	name          string
+	rootVolume    *MachineTypeRootVolumeBuilder
 	size          MachineTypeSize
 	ccsOnly       bool
 }
@@ -61,9 +62,12 @@ func (b *MachineTypeBuilder) HREF(value string) *MachineTypeBuilder {
 	return b
 }
 
+// Empty returns true if the builder is empty, i.e. no attribute has a value.
+func (b *MachineTypeBuilder) Empty() bool {
+	return b == nil || b.bitmap_&^1 == 0
+}
+
 // CCSOnly sets the value of the 'CCS_only' attribute to the given value.
-//
-//
 func (b *MachineTypeBuilder) CCSOnly(value bool) *MachineTypeBuilder {
 	b.ccsOnly = value
 	b.bitmap_ |= 8
@@ -123,8 +127,6 @@ func (b *MachineTypeBuilder) CloudProvider(value *CloudProviderBuilder) *Machine
 }
 
 // GenericName sets the value of the 'generic_name' attribute to the given value.
-//
-//
 func (b *MachineTypeBuilder) GenericName(value string) *MachineTypeBuilder {
 	b.genericName = value
 	b.bitmap_ |= 128
@@ -162,11 +164,22 @@ func (b *MachineTypeBuilder) Memory(value *ValueBuilder) *MachineTypeBuilder {
 }
 
 // Name sets the value of the 'name' attribute to the given value.
-//
-//
 func (b *MachineTypeBuilder) Name(value string) *MachineTypeBuilder {
 	b.name = value
 	b.bitmap_ |= 512
+	return b
+}
+
+// RootVolume sets the value of the 'root_volume' attribute to the given value.
+//
+// Machine type root volume.
+func (b *MachineTypeBuilder) RootVolume(value *MachineTypeRootVolumeBuilder) *MachineTypeBuilder {
+	b.rootVolume = value
+	if value != nil {
+		b.bitmap_ |= 1024
+	} else {
+		b.bitmap_ &^= 1024
+	}
 	return b
 }
 
@@ -175,7 +188,7 @@ func (b *MachineTypeBuilder) Name(value string) *MachineTypeBuilder {
 // Machine type size.
 func (b *MachineTypeBuilder) Size(value MachineTypeSize) *MachineTypeBuilder {
 	b.size = value
-	b.bitmap_ |= 1024
+	b.bitmap_ |= 2048
 	return b
 }
 
@@ -206,6 +219,11 @@ func (b *MachineTypeBuilder) Copy(object *MachineType) *MachineTypeBuilder {
 		b.memory = nil
 	}
 	b.name = object.name
+	if object.rootVolume != nil {
+		b.rootVolume = NewMachineTypeRootVolume().Copy(object.rootVolume)
+	} else {
+		b.rootVolume = nil
+	}
 	b.size = object.size
 	return b
 }
@@ -238,6 +256,12 @@ func (b *MachineTypeBuilder) Build() (object *MachineType, err error) {
 		}
 	}
 	object.name = b.name
+	if b.rootVolume != nil {
+		object.rootVolume, err = b.rootVolume.Build()
+		if err != nil {
+			return
+		}
+	}
 	object.size = b.size
 	return
 }
