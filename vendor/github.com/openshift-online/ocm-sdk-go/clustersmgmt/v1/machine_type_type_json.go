@@ -21,7 +21,6 @@ package v1 // github.com/openshift-online/ocm-sdk-go/clustersmgmt/v1
 
 import (
 	"io"
-	"net/http"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/openshift-online/ocm-sdk-go/helpers"
@@ -31,7 +30,10 @@ import (
 func MarshalMachineType(object *MachineType, writer io.Writer) error {
 	stream := helpers.NewStream(writer)
 	writeMachineType(object, stream)
-	stream.Flush()
+	err := stream.Flush()
+	if err != nil {
+		return err
+	}
 	return stream.Error
 }
 
@@ -126,14 +128,22 @@ func writeMachineType(object *MachineType, stream *jsoniter.Stream) {
 		stream.WriteString(object.name)
 		count++
 	}
-	present_ = object.bitmap_&1024 != 0
+	present_ = object.bitmap_&1024 != 0 && object.rootVolume != nil
+	if present_ {
+		if count > 0 {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("root_volume")
+		writeMachineTypeRootVolume(object.rootVolume, stream)
+		count++
+	}
+	present_ = object.bitmap_&2048 != 0
 	if present_ {
 		if count > 0 {
 			stream.WriteMore()
 		}
 		stream.WriteObjectField("size")
 		stream.WriteString(string(object.size))
-		count++
 	}
 	stream.WriteObjectEnd()
 }
@@ -141,9 +151,6 @@ func writeMachineType(object *MachineType, stream *jsoniter.Stream) {
 // UnmarshalMachineType reads a value of the 'machine_type' type from the given
 // source, which can be an slice of bytes, a string or a reader.
 func UnmarshalMachineType(source interface{}) (object *MachineType, err error) {
-	if source == http.NoBody {
-		return
-	}
 	iterator, err := helpers.NewIterator(source)
 	if err != nil {
 		return
@@ -202,11 +209,15 @@ func readMachineType(iterator *jsoniter.Iterator) *MachineType {
 			value := iterator.ReadString()
 			object.name = value
 			object.bitmap_ |= 512
+		case "root_volume":
+			value := readMachineTypeRootVolume(iterator)
+			object.rootVolume = value
+			object.bitmap_ |= 1024
 		case "size":
 			text := iterator.ReadString()
 			value := MachineTypeSize(text)
 			object.size = value
-			object.bitmap_ |= 1024
+			object.bitmap_ |= 2048
 		default:
 			iterator.ReadAny()
 		}
