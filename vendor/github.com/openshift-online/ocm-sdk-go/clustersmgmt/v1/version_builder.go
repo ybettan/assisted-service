@@ -27,16 +27,19 @@ import (
 //
 // Representation of an _OpenShift_ version.
 type VersionBuilder struct {
-	bitmap_            uint32
-	id                 string
-	href               string
-	availableUpgrades  []string
-	channelGroup       string
-	endOfLifeTimestamp time.Time
-	rawID              string
-	rosaEnabled        bool
-	default_           bool
-	enabled            bool
+	bitmap_                   uint32
+	id                        string
+	href                      string
+	availableUpgrades         []string
+	channelGroup              string
+	endOfLifeTimestamp        time.Time
+	imageOverrides            *ImageOverridesBuilder
+	rawID                     string
+	releaseImage              string
+	rosaEnabled               bool
+	default_                  bool
+	enabled                   bool
+	hostedControlPlaneEnabled bool
 }
 
 // NewVersion creates a new builder of 'version' objects.
@@ -64,9 +67,12 @@ func (b *VersionBuilder) HREF(value string) *VersionBuilder {
 	return b
 }
 
+// Empty returns true if the builder is empty, i.e. no attribute has a value.
+func (b *VersionBuilder) Empty() bool {
+	return b == nil || b.bitmap_&^1 == 0
+}
+
 // ROSAEnabled sets the value of the 'ROSA_enabled' attribute to the given value.
-//
-//
 func (b *VersionBuilder) ROSAEnabled(value bool) *VersionBuilder {
 	b.rosaEnabled = value
 	b.bitmap_ |= 8
@@ -74,8 +80,6 @@ func (b *VersionBuilder) ROSAEnabled(value bool) *VersionBuilder {
 }
 
 // AvailableUpgrades sets the value of the 'available_upgrades' attribute to the given values.
-//
-//
 func (b *VersionBuilder) AvailableUpgrades(values ...string) *VersionBuilder {
 	b.availableUpgrades = make([]string, len(values))
 	copy(b.availableUpgrades, values)
@@ -84,8 +88,6 @@ func (b *VersionBuilder) AvailableUpgrades(values ...string) *VersionBuilder {
 }
 
 // ChannelGroup sets the value of the 'channel_group' attribute to the given value.
-//
-//
 func (b *VersionBuilder) ChannelGroup(value string) *VersionBuilder {
 	b.channelGroup = value
 	b.bitmap_ |= 32
@@ -93,8 +95,6 @@ func (b *VersionBuilder) ChannelGroup(value string) *VersionBuilder {
 }
 
 // Default sets the value of the 'default' attribute to the given value.
-//
-//
 func (b *VersionBuilder) Default(value bool) *VersionBuilder {
 	b.default_ = value
 	b.bitmap_ |= 64
@@ -102,8 +102,6 @@ func (b *VersionBuilder) Default(value bool) *VersionBuilder {
 }
 
 // Enabled sets the value of the 'enabled' attribute to the given value.
-//
-//
 func (b *VersionBuilder) Enabled(value bool) *VersionBuilder {
 	b.enabled = value
 	b.bitmap_ |= 128
@@ -111,20 +109,43 @@ func (b *VersionBuilder) Enabled(value bool) *VersionBuilder {
 }
 
 // EndOfLifeTimestamp sets the value of the 'end_of_life_timestamp' attribute to the given value.
-//
-//
 func (b *VersionBuilder) EndOfLifeTimestamp(value time.Time) *VersionBuilder {
 	b.endOfLifeTimestamp = value
 	b.bitmap_ |= 256
 	return b
 }
 
+// HostedControlPlaneEnabled sets the value of the 'hosted_control_plane_enabled' attribute to the given value.
+func (b *VersionBuilder) HostedControlPlaneEnabled(value bool) *VersionBuilder {
+	b.hostedControlPlaneEnabled = value
+	b.bitmap_ |= 512
+	return b
+}
+
+// ImageOverrides sets the value of the 'image_overrides' attribute to the given value.
+//
+// ImageOverrides holds the lists of available images per cloud provider.
+func (b *VersionBuilder) ImageOverrides(value *ImageOverridesBuilder) *VersionBuilder {
+	b.imageOverrides = value
+	if value != nil {
+		b.bitmap_ |= 1024
+	} else {
+		b.bitmap_ &^= 1024
+	}
+	return b
+}
+
 // RawID sets the value of the 'raw_ID' attribute to the given value.
-//
-//
 func (b *VersionBuilder) RawID(value string) *VersionBuilder {
 	b.rawID = value
-	b.bitmap_ |= 512
+	b.bitmap_ |= 2048
+	return b
+}
+
+// ReleaseImage sets the value of the 'release_image' attribute to the given value.
+func (b *VersionBuilder) ReleaseImage(value string) *VersionBuilder {
+	b.releaseImage = value
+	b.bitmap_ |= 4096
 	return b
 }
 
@@ -147,7 +168,14 @@ func (b *VersionBuilder) Copy(object *Version) *VersionBuilder {
 	b.default_ = object.default_
 	b.enabled = object.enabled
 	b.endOfLifeTimestamp = object.endOfLifeTimestamp
+	b.hostedControlPlaneEnabled = object.hostedControlPlaneEnabled
+	if object.imageOverrides != nil {
+		b.imageOverrides = NewImageOverrides().Copy(object.imageOverrides)
+	} else {
+		b.imageOverrides = nil
+	}
 	b.rawID = object.rawID
+	b.releaseImage = object.releaseImage
 	return b
 }
 
@@ -166,6 +194,14 @@ func (b *VersionBuilder) Build() (object *Version, err error) {
 	object.default_ = b.default_
 	object.enabled = b.enabled
 	object.endOfLifeTimestamp = b.endOfLifeTimestamp
+	object.hostedControlPlaneEnabled = b.hostedControlPlaneEnabled
+	if b.imageOverrides != nil {
+		object.imageOverrides, err = b.imageOverrides.Build()
+		if err != nil {
+			return
+		}
+	}
 	object.rawID = b.rawID
+	object.releaseImage = b.releaseImage
 	return
 }
