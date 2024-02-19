@@ -19,9 +19,7 @@ package validation
 import (
 	"fmt"
 	"math"
-	"net"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -191,7 +189,13 @@ func IsDNS1123Label(value string) []string {
 		errs = append(errs, MaxLenError(DNS1123LabelMaxLength))
 	}
 	if !dns1123LabelRegexp.MatchString(value) {
-		errs = append(errs, RegexError(dns1123LabelErrMsg, dns1123LabelFmt, "my-name", "123-abc"))
+		if dns1123SubdomainRegexp.MatchString(value) {
+			// It was a valid subdomain and not a valid label.  Since we
+			// already checked length, it must be dots.
+			errs = append(errs, "must not contain dots")
+		} else {
+			errs = append(errs, RegexError(dns1123LabelErrMsg, dns1123LabelFmt, "my-name", "123-abc"))
+		}
 	}
 	return errs
 }
@@ -334,7 +338,7 @@ func IsValidPortName(port string) []string {
 		errs = append(errs, "must contain only alpha-numeric characters (a-z, 0-9), and hyphens (-)")
 	}
 	if !portNameOneLetterRegexp.MatchString(port) {
-		errs = append(errs, "must contain at least one letter or number (a-z, 0-9)")
+		errs = append(errs, "must contain at least one letter (a-z)")
 	}
 	if strings.Contains(port, "--") {
 		errs = append(errs, "must not contain consecutive hyphens")
@@ -346,11 +350,12 @@ func IsValidPortName(port string) []string {
 }
 
 // IsValidIP tests that the argument is a valid IP address.
-func IsValidIP(value string) []string {
+func IsValidIP(fldPath *field.Path, value string) field.ErrorList {
+	var allErrors field.ErrorList
 	if netutils.ParseIPSloppy(value) == nil {
-		return []string{"must be a valid IP address, (e.g. 10.9.8.7 or 2001:db8::ffff)"}
+		allErrors = append(allErrors, field.Invalid(fldPath, value, "must be a valid IP address, (e.g. 10.9.8.7 or 2001:db8::ffff)"))
 	}
-	return nil
+	return allErrors
 }
 
 // IsValidIPv4Address tests that the argument is a valid IPv4 address.
@@ -485,20 +490,5 @@ func hasChDirPrefix(value string) []string {
 	case strings.HasPrefix(value, ".."):
 		errs = append(errs, `must not start with '..'`)
 	}
-	return errs
-}
-
-// IsValidSocketAddr checks that string represents a valid socket address
-// as defined in RFC 789. (e.g 0.0.0.0:10254 or [::]:10254))
-func IsValidSocketAddr(value string) []string {
-	var errs []string
-	ip, port, err := net.SplitHostPort(value)
-	if err != nil {
-		errs = append(errs, "must be a valid socket address format, (e.g. 0.0.0.0:10254 or [::]:10254)")
-		return errs
-	}
-	portInt, _ := strconv.Atoi(port)
-	errs = append(errs, IsValidPortNum(portInt)...)
-	errs = append(errs, IsValidIP(ip)...)
 	return errs
 }
