@@ -31,6 +31,7 @@ import (
 	extensionsv1beta1 "k8s.io/client-go/applyconfigurations/extensions/v1beta1"
 	scheme "k8s.io/client-go/kubernetes/scheme"
 	rest "k8s.io/client-go/rest"
+	consistencydetector "k8s.io/client-go/util/consistencydetector"
 )
 
 // NetworkPoliciesGetter has a method to return a NetworkPolicyInterface.
@@ -43,7 +44,6 @@ type NetworkPoliciesGetter interface {
 type NetworkPolicyInterface interface {
 	Create(ctx context.Context, networkPolicy *v1beta1.NetworkPolicy, opts v1.CreateOptions) (*v1beta1.NetworkPolicy, error)
 	Update(ctx context.Context, networkPolicy *v1beta1.NetworkPolicy, opts v1.UpdateOptions) (*v1beta1.NetworkPolicy, error)
-	UpdateStatus(ctx context.Context, networkPolicy *v1beta1.NetworkPolicy, opts v1.UpdateOptions) (*v1beta1.NetworkPolicy, error)
 	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
 	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
 	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1beta1.NetworkPolicy, error)
@@ -51,7 +51,6 @@ type NetworkPolicyInterface interface {
 	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
 	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1beta1.NetworkPolicy, err error)
 	Apply(ctx context.Context, networkPolicy *extensionsv1beta1.NetworkPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1beta1.NetworkPolicy, err error)
-	ApplyStatus(ctx context.Context, networkPolicy *extensionsv1beta1.NetworkPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1beta1.NetworkPolicy, err error)
 	NetworkPolicyExpansion
 }
 
@@ -84,6 +83,16 @@ func (c *networkPolicies) Get(ctx context.Context, name string, options v1.GetOp
 
 // List takes label and field selectors, and returns the list of NetworkPolicies that match those selectors.
 func (c *networkPolicies) List(ctx context.Context, opts v1.ListOptions) (result *v1beta1.NetworkPolicyList, err error) {
+	defer func() {
+		if err == nil {
+			consistencydetector.CheckListFromCacheDataConsistencyIfRequested(ctx, "list request for networkpolicies", c.list, opts, result)
+		}
+	}()
+	return c.list(ctx, opts)
+}
+
+// list takes label and field selectors, and returns the list of NetworkPolicies that match those selectors.
+func (c *networkPolicies) list(ctx context.Context, opts v1.ListOptions) (result *v1beta1.NetworkPolicyList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -134,22 +143,6 @@ func (c *networkPolicies) Update(ctx context.Context, networkPolicy *v1beta1.Net
 		Namespace(c.ns).
 		Resource("networkpolicies").
 		Name(networkPolicy.Name).
-		VersionedParams(&opts, scheme.ParameterCodec).
-		Body(networkPolicy).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// UpdateStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *networkPolicies) UpdateStatus(ctx context.Context, networkPolicy *v1beta1.NetworkPolicy, opts v1.UpdateOptions) (result *v1beta1.NetworkPolicy, err error) {
-	result = &v1beta1.NetworkPolicy{}
-	err = c.client.Put().
-		Namespace(c.ns).
-		Resource("networkpolicies").
-		Name(networkPolicy.Name).
-		SubResource("status").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(networkPolicy).
 		Do(ctx).
@@ -218,36 +211,6 @@ func (c *networkPolicies) Apply(ctx context.Context, networkPolicy *extensionsv1
 		Namespace(c.ns).
 		Resource("networkpolicies").
 		Name(*name).
-		VersionedParams(&patchOpts, scheme.ParameterCodec).
-		Body(data).
-		Do(ctx).
-		Into(result)
-	return
-}
-
-// ApplyStatus was generated because the type contains a Status member.
-// Add a +genclient:noStatus comment above the type to avoid generating ApplyStatus().
-func (c *networkPolicies) ApplyStatus(ctx context.Context, networkPolicy *extensionsv1beta1.NetworkPolicyApplyConfiguration, opts v1.ApplyOptions) (result *v1beta1.NetworkPolicy, err error) {
-	if networkPolicy == nil {
-		return nil, fmt.Errorf("networkPolicy provided to Apply must not be nil")
-	}
-	patchOpts := opts.ToPatchOptions()
-	data, err := json.Marshal(networkPolicy)
-	if err != nil {
-		return nil, err
-	}
-
-	name := networkPolicy.Name
-	if name == nil {
-		return nil, fmt.Errorf("networkPolicy.Name must be provided to Apply")
-	}
-
-	result = &v1beta1.NetworkPolicy{}
-	err = c.client.Patch(types.ApplyPatchType).
-		Namespace(c.ns).
-		Resource("networkpolicies").
-		Name(*name).
-		SubResource("status").
 		VersionedParams(&patchOpts, scheme.ParameterCodec).
 		Body(data).
 		Do(ctx).
