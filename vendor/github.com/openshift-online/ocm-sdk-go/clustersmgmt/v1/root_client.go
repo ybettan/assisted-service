@@ -71,6 +71,16 @@ func (c *Client) AWSInquiries() *AWSInquiriesClient {
 	)
 }
 
+// DNSDomains returns the target 'DNS_domains' resource.
+//
+// Reference to the resource that manages dns domains.
+func (c *Client) DNSDomains() *DNSDomainsClient {
+	return NewDNSDomainsClient(
+		c.transport,
+		path.Join(c.path, "dns_domains"),
+	)
+}
+
 // GCPInquiries returns the target 'GCP_inquiries' resource.
 //
 // Reference to the resource that manages the collection of gcp inquiries.
@@ -111,6 +121,16 @@ func (c *Client) Clusters() *ClustersClient {
 	)
 }
 
+// Environment returns the target 'environment' resource.
+//
+// Reference to the resource that manages the environment.
+func (c *Client) Environment() *EnvironmentClient {
+	return NewEnvironmentClient(
+		c.transport,
+		path.Join(c.path, "environment"),
+	)
+}
+
 // Events returns the target 'events' resource.
 //
 // Reference to the resource that manages the collection of trackable events.
@@ -141,6 +161,16 @@ func (c *Client) LimitedSupportReasonTemplates() *LimitedSupportReasonTemplatesC
 	)
 }
 
+// LoadBalancerQuotaValues returns the target 'load_balancer_quota_values' resource.
+//
+// Reference to the resource that manages the load balancer quota values.
+func (c *Client) LoadBalancerQuotaValues() *LoadBalancerQuotaValuesClient {
+	return NewLoadBalancerQuotaValuesClient(
+		c.transport,
+		path.Join(c.path, "load_balancer_quota_values"),
+	)
+}
+
 // MachineTypes returns the target 'machine_types' resource.
 //
 // Reference to the resource that manage the collection of machine types.
@@ -148,6 +178,36 @@ func (c *Client) MachineTypes() *MachineTypesClient {
 	return NewMachineTypesClient(
 		c.transport,
 		path.Join(c.path, "machine_types"),
+	)
+}
+
+// NetworkVerifications returns the target 'network_verifications' resource.
+//
+// Reference to the resource that manages network verifications.
+func (c *Client) NetworkVerifications() *NetworkVerificationsClient {
+	return NewNetworkVerificationsClient(
+		c.transport,
+		path.Join(c.path, "network_verifications"),
+	)
+}
+
+// OidcConfigs returns the target 'oidc_configs' resource.
+//
+// Reference to the resource that manages oidc.
+func (c *Client) OidcConfigs() *OidcConfigsClient {
+	return NewOidcConfigsClient(
+		c.transport,
+		path.Join(c.path, "oidc_configs"),
+	)
+}
+
+// PendingDeleteClusters returns the target 'pending_delete_clusters' resource.
+//
+// Reference to the resource that manages the collection of pending delete clusters.
+func (c *Client) PendingDeleteClusters() *PendingDeleteClustersClient {
+	return NewPendingDeleteClustersClient(
+		c.transport,
+		path.Join(c.path, "pending_delete_clusters"),
 	)
 }
 
@@ -171,6 +231,36 @@ func (c *Client) ProvisionShards() *ProvisionShardsClient {
 	)
 }
 
+// StorageQuotaValues returns the target 'storage_quota_values' resource.
+//
+// Reference to the resource that manages the storage quota values.
+func (c *Client) StorageQuotaValues() *StorageQuotaValuesClient {
+	return NewStorageQuotaValuesClient(
+		c.transport,
+		path.Join(c.path, "storage_quota_values"),
+	)
+}
+
+// TrustedIPAddresses returns the target 'trusted_ips' resource.
+//
+// Reference to the resource that manages the collection of trusted ip addresses.
+func (c *Client) TrustedIPAddresses() *TrustedIpsClient {
+	return NewTrustedIpsClient(
+		c.transport,
+		path.Join(c.path, "trusted_ip_addresses"),
+	)
+}
+
+// VersionGates returns the target 'version_gates' resource.
+//
+// Reference to version gates.
+func (c *Client) VersionGates() *VersionGatesClient {
+	return NewVersionGatesClient(
+		c.transport,
+		path.Join(c.path, "version_gates"),
+	)
+}
+
 // Versions returns the target 'versions' resource.
 //
 // Reference to the resource that manage the collection of versions.
@@ -178,5 +268,25 @@ func (c *Client) Versions() *VersionsClient {
 	return NewVersionsClient(
 		c.transport,
 		path.Join(c.path, "versions"),
+	)
+}
+
+// WifConfigs returns the target 'wif_configs' resource.
+//
+// Reference to the resource that manages wif_configs
+func (c *Client) WifConfigs() *WifConfigsClient {
+	return NewWifConfigsClient(
+		c.transport,
+		path.Join(c.path, "wif_configs"),
+	)
+}
+
+// WifTemplates returns the target 'wif_template' resource.
+//
+// Reference to the resource that manages wif_templates
+func (c *Client) WifTemplates() *WifTemplateClient {
+	return NewWifTemplateClient(
+		c.transport,
+		path.Join(c.path, "wif_templates"),
 	)
 }
